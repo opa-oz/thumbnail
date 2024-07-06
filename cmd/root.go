@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/opa-oz/go-todo/todo"
 	"github.com/opa-oz/thumbnail/pkg/image"
+	"github.com/opa-oz/thumbnail/pkg/utils"
 	"github.com/opa-oz/thumbnail/pkg/validators"
 	"github.com/spf13/cobra"
 )
@@ -26,13 +26,17 @@ var size string
 var rootCmd = &cobra.Command{
 	Use:   "thumbnail",
 	Short: "Generate thumbnail from image",
+	Long: `Generate thumbnail from image(s)
+  Example:
+    thumbnail -s=160x224 file1.jpg file2.png ... fileN.jpeg
+  `,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
 			return err
 		}
 
 		for _, arg := range args {
-			if err := validators.ExistsOrError(arg); err != nil {
+			if err := validators.ExistsOrError(arg, utils.IsFileExists); err != nil {
 				return err
 			}
 
@@ -69,11 +73,8 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		length := todo.Int("Do thumbnail for multiple input files", 1)
-
-		for i := 0; i < length; i++ {
-			filename := args[0]
-
+		for i := 0; i < len(args); i++ {
+			filename := args[i]
 			err := image.ProcessImage(filename, uint(width), uint(height), newFname)
 
 			if err != nil {
@@ -85,8 +86,6 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -95,6 +94,6 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&size, "size", "s", "160x224", "Size of produced thumbnail - <width>x<height>")
+	rootCmd.Flags().StringVarP(&size, "size", "s", "", "size of produced thumbnail - `<width>x<height>`")
 	rootCmd.MarkFlagRequired("size")
 }
